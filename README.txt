@@ -61,31 +61,31 @@ http://api.drupalhelp.net/api/media_youtube/functions/7
 
 
 new style
-<iframe width="480" height="386" src="http://www.ustream.tv/embed/recorded/25234010?wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
+<iframe width="480" height="386" src="http://www.ustream.tv/embed/recorded/123456?wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
 <br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>
 
 new style no hw accel (wmode not set)
-<iframe width="480" height="386" src="http://www.ustream.tv/embed/recorded/25234010" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
+<iframe width="480" height="386" src="http://www.ustream.tv/embed/recorded/123456" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
 <br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>
 
 old style
 <object width="480" height="386" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
   <param name="wmode" value="direct"/>
-  <param name="flashvars" value="vid=25234010&amp;autoplay=false"/>
+  <param name="flashvars" value="vid=123456&amp;autoplay=false"/>
   <param name="allowfullscreen" value="true"/>
   <param name="allowscriptaccess" value="always"/>
   <param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
-  <embed flashvars="vid=25234010&amp;autoplay=false" width="480" height="386" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash"></embed>
+  <embed flashvars="vid=123456&amp;autoplay=false" width="480" height="386" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash"></embed>
 </object>
 <br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>
 
 old style no hw accel (wmode not set)
 <object width="480" height="386" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
-  <param name="flashvars" value="vid=25234010&amp;autoplay=false"/>
+  <param name="flashvars" value="vid=123456&amp;autoplay=false"/>
   <param name="allowfullscreen" value="true"/>
   <param name="allowscriptaccess" value="always"/>
   <param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
-  <embed flashvars="vid=25234010&amp;autoplay=false" width="480" height="386" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash"></embed>
+  <embed flashvars="vid=123456&amp;autoplay=false" width="480" height="386" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash"></embed>
 </object>
 <br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>
 
@@ -93,6 +93,6 @@ old style no hw accel (wmode not set)
 old (youtube clone) style (also works obviously, but no flash fallback if html5 is not supported, current way offers this posibility)
   <div class="content">
     <div class="media-ustream-video media-ustream-1">
-  <iframe class="media-ustream-player" width="640" height="400" src="https://www.ustream.tv/embed/recorded/25497194?wmode=opaque" frameborder="0" allowfullscreen></iframe>
+  <iframe class="media-ustream-player" width="640" height="400" src="https://www.ustream.tv/embed/recorded/123456?wmode=opaque" frameborder="0" allowfullscreen></iframe>
 </div>
 
