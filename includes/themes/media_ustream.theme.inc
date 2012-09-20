@@ -152,9 +152,9 @@ function media_ustream_preprocess_media_ustream_video(&$variables) {
 
   // Let's go the vimeo way.
   $variables['output'] = <<<OUTPUT
-<object width="480" height="386" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
+<object width="{$variables['options']['width']}" height="{$variables['options']['height']}" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
 $wmode
-  <param name="flashvars" value="vid=25234010&amp;autoplay=false"/>
+  <param name="flashvars" value="vid={$variables['video_id']}&amp;autoplay={$autoplay}"/>
 $allowfullscreen
   <param name="allowscriptaccess" value="always"/>
   <param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
