@@ -1,0 +1,13 @@
+
+name = Media: UStream
+description = Provides UStream support to the Media module.
+package = "Media"
+core = 7.x
+files[] = media_ustream.module
+files[] = includes/MediaInternetUStreamHandler.inc
+files[] = includes/MediaUStreamStreamWrapper.inc
+files[] = includes/MediaUStreamBrowser.inc
+files[] = includes/media_ustream.formatters.inc
+files[] = includes/media_ustream.variables.inc
+dependencies[] = media
+dependencies[] = media_internet
