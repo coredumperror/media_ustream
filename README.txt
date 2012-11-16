@@ -1,6 +1,6 @@
 A clone of the media_youtube module, but now for UStream. Video and channel functionality is working, but search capability is currently non-functional.
 
-This module is complete, but currently lacks any functionality beyond storing videos and and channels in Media fields.
+This module is complete, but currently lacks any functionality beyond storing videos and live channels as Media fields.
 
 What works:
 - Adding recorded media and live channels from UStream to media 2.x (selector) enabled file fields.
