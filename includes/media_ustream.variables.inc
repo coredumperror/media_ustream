@@ -17,7 +17,7 @@ define('MEDIA_USTREAM_NAMESPACE', 'media_ustream__');
 /**
  * This is the rest point for the UStream api.
  */
-define('MEDIA_USTREAM_REST_API', 'https://api.ustream.tv/json');
+define('MEDIA_USTREAM_REST_API', 'https://api.ustream.tv');
 
 /**
  * Wrapper for variable_get() using the Media: UStream variable registry.
@@ -39,8 +39,7 @@ define('MEDIA_USTREAM_REST_API', 'https://api.ustream.tv/json');
  */
 function media_ustream_variable_get($name, $default = NULL) {
   // Allow for an override of the default.
-  // Useful when a variable is required (like $path), but namespacing is still
-  // desired.
+  // Useful when a variable is required (like $path), but namespacing is still desired.
   if (!isset($default)) {
     $default = media_ustream_variable_default($name);
   }
@@ -108,23 +107,9 @@ function media_ustream_variable_default($name = NULL) {
     $defaults = array(
       'width' => 640,
       'height' => 400,
-//      'autohide' => 2,
       'autoplay' => FALSE,
-      'color' => 'Default', // Default, Blue, Green, Red, Pink
-      'size' => 360, // 360, 480, 720
-//      'controls' => TRUE,
-//      'enablejsapi' => FALSE,
-//      'loop' => FALSE,
-//      'modestbranding' => FALSE,
-//      'nocookie' => FALSE,
-//      'origin' => '',
       'protocol' => 'https:',
       'protocol_specify' => FALSE,
-//      'rel' => TRUE,
-//      'showinfo' => TRUE,
-//      'theme' => 'dark',
-      'html5' => 0,
-      'ustream_api_key' => '',
     );
   }
 

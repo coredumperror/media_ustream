@@ -6,21 +6,25 @@
  * Template file for theme('media_ustream_video').
  *
  * Variables available:
- *  $uri - The media uri for the UStream video (e.g., ustream://v/xsy7x8c9).
- *  $video_id - The unique identifier of the UStream video (e.g., xsy7x8c9).
+ *  $uri - The media uri for the UStream video (e.g., ustream://recorded/123456).
+ *  $video_id - The unique identifier of the UStream video/channel (e.g., 123456).
  *  $id - The file entity ID (fid).
- *  $url - The full url including query options for the Youtube iframe.
- *  $options - An array containing the Media Youtube formatter options.
- *  $api_id_attribute - An id attribute if the Javascript API is enabled; 
- *  otherwise NULL.
- *  $width - The width value set in Media: Youtube file display options.
- *  $height - The height value set in Media: Youtube file display options.
+ *  $url - The full url including query options for the UStream iframe.
+ *  $options - An array containing the Media: UStream formatter options.
+ *  $width - The width value set in Media: UStream file display options.
+ *  $height - The height value set in Media: UStream file display options.
+ *  $title - The title of the UStream video.
  *
  */
 
 ?>
-<div class="media-ustream-outer-wrapper media-ustream-<?php print $id; ?>" id="media-ustream-<?php print $id; ?>" style="width: <?php print $width; ?>px; height: <?php print $height; ?>px;">
-  <div class="media-ustream-preview-wrapper" id="<?php print $wrapper_id; ?>" width="<?php print $width; ?>" height="<?php print $height; ?>">
-    <?php print $output; ?>
-  </div>
+<div class="<?php print $classes; ?> media-ustream-<?php print $video_id; ?>">
+  <iframe
+    class="media-ustream-player"
+    width="<?php print $width; ?>"
+    height="<?php print $height; ?>"
+    title="<?php print $title; ?>"
+    src="<?php print $url; ?>"
+    style="border: 0">
+  </iframe>
 </div>

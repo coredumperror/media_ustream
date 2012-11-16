@@ -11,111 +11,146 @@
  * @see hook_media_internet_providers().
  */
 class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
+  
   /**
-   * Call the UStream API and fetch the video information.
+   * Call the UStream API to fetch the video information.
    *
    * See http://developer.ustream.tv/data_api/docs
    *
    * @return
    *   Array of properties.
    */
-  static function getVideoProperties($id) {
-    // The .php format returns a serialized array.
-    $response = drupal_http_request('http://api.ustream.tv/php/video/' . $id . '/getInfo');
-    // @TODO: change this to work with drupal_json_decode().
-
-
-    return unserialize($response->data);
+  static public function getVideoProperties($id) {
+    // e.g. http://api.ustream.tv/json/video/38492/getInfo
+    $response = drupal_http_request(MEDIA_USTREAM_REST_API . '/json/video/' . $id . '/getInfo');
+    return drupal_json_decode($response->data);
   }
-
+  
   /**
-   * Check if a UStream video id is valid.
+   * Call the UStream API to fetch the channel information.
+   *
+   * See http://developer.ustream.tv/data_api/docs
+   *
+   * @return
+   *   Array of properties.
+   */
+  static public function getChannelProperties($id) {
+    // e.g. http://api.ustream.tv/json/channel/api-test-show/getInfo
+    $response = drupal_http_request(MEDIA_USTREAM_REST_API . '/json/channel/' . $id . '/getInfo');
+    return drupal_json_decode($response->data);
+  }
+  
+  /**
+   * Check if a UStream video/channel id is valid.
+   *
+   * @param $id - The video or channel ID.
+   * @param $type - A string, either 'live' or 'recorded'.
+   *
+   * @return
+   *   Boolean.
+   *
+   * @throws
+   *   MediaInternetValidationException - When the ID is invalid.
+   */
+  static public function validId($id, $type) {
+    if ($type == 'recorded') {
+      $video_properties = self::getVideoProperties($id);
+      if ($video_properties['error']) {
+        throw new MediaInternetValidationException(
+            "The UStream video ID '$id' does not exist, is set to private, or has been deleted.");
+      }
+      return $video_properties;
+    }
+    else if ($type == 'live') {
+      $channel_properties = self::getChannelProperties($id);
+      if ($channel_properties['error'] || $channel_properties['results']['title'] == NULL) {
+        // $channel_properties['error'] is non-NULL when referring to a channel by a bad name string.
+        // The Title is NULL when referring to a channel by a bad id (this is probably an API bug).
+        throw new MediaInternetValidationException(
+            "The UStream channel ID '$id' does not exist, is set to private, or has been deleted.");
+      }
+      return $channel_properties;
+    }
+    return FALSE;
+  }
+  
+  /**
+   * Check if a UStream id is already stored in the DB.
+   *
+   * @param $id - The video or channel ID.
+   * @param $type - A string, either 'live' or 'recorded'.
    *
    * @return
    *   Boolean.
    */
-  static public function validId($id) {
-    $video_properties = self::getVideoProperties($id);
-    // Check if the result contains an error.
-    if ($video_properties['error'] != FALSE) {
-      throw new MediaInternetValidationException('The UStream video ID is invalid, is set to private or has been deleted.');
-    }
-    return TRUE;
+  static public function knownId($id, $type) {
+    $file_query = new EntityFieldQuery;
+    $results = $file_query->entityCondition('entity_type', 'file')
+      ->propertyCondition('uri', "ustream://$type/$id")
+      ->execute();
+    
+    return (bool)$results;
   }
-
+  
   public function parse($embedCode) {
-    $patterns = array(
-      '@ustream\.tv/recorded/(\d+)@i',
-      '@ustream\.tv/embed/recorded/([^"\&\?]+)@i',
-      '@flashvars="loc=%2F&amp;autoplay=false&amp;vid=(\d+)@i',
+    $embedCode = trim($embedCode);
+    
+    // First, check if it's a recorded video pattern.
+    $recorded_patterns = array(
+      '@ustream\.tv/recorded/(\d+)@i', // Matches the URL for the video page.
+      '@ustream\.tv/embed/recorded/([^"\&\?]+)@i', // Matches the URL from the embed code for recorded videos.
     );
-    foreach ($patterns as $pattern) {
+    foreach ($recorded_patterns as $pattern) {
       preg_match($pattern, $embedCode, $matches);
-      // @TODO: Parse is called often. Refactor so that valid ID is checked
-      // when a video is added, but not every time the embedCode is parsed.
-
-      // @TODO: check if this is also valid for the vimeo-way we use.
-
-      if (isset($matches[1]) && self::validId($matches[1])) {
-
-//    $video_properties = self::getVideoProperties($matches[1]);
-//        return file_stream_wrapper_uri_normalize('ustream://v/' . $video_properties['results']['title']);
-        return file_stream_wrapper_uri_normalize('ustream://v/' . $matches[1]);
+      // If a match was found, check if it's a video that's already saved locally, before calling the API to see
+      // if it's a valid video id.
+      if (isset($matches[1]) && (self::knownId($matches[1], 'recorded') || self::validId($matches[1], 'recorded'))) {
+        return file_stream_wrapper_uri_normalize('ustream://recorded/' . $matches[1]);
       }
     }
+    
+    // If it's not a recorded video, check if it's a live channel.
+    $matches = array();
+    $match = '';
+    preg_match('@ustream\.tv/channel/([a-zA-Z\-]+)@i', $embedCode, $matches);
+    if (isset($matches[1])) {
+      // This is a channel URL (as opposed to an embed code), so we need to convert the contained
+      // channel name into a channel ID, since all our ustream:// uris use IDs.
+      $properties = self::getChannelProperties($matches[1]);
+      if (!$properties['error']) {
+        $match = $properties['results']['id'];
+      }
+    }
+    // If the channel name didn't match, check if it's a live channel embed code.
+    if (!$match) {
+      preg_match('@ustream\.tv/embed/([^"\&\?]+)@i', $embedCode, $matches);
+      if (isset($matches[1]) && (self::knownId($matches[1], 'live') || self::validId($matches[1], 'live'))) {
+        $match = $matches[1];
+      }
+    }
+    
+    if ($match) {
+      return file_stream_wrapper_uri_normalize('ustream://live/' . $match);
+    }
   }
-
+  
   public function claim($embedCode) {
     if ($this->parse($embedCode)) {
       return TRUE;
     }
   }
-
+  
   public function getFileObject() {
     $uri = $this->parse($this->embedCode);
     $file = file_uri_to_object($uri, TRUE);
-
-
-//    $video_properties = self::getVideoProperties($file->filename);
-//print_r($video_properties);
-
+    
     if (empty($file->fid) && $info = $this->getOEmbed()) {
-//      $file->filename = truncate_utf8($video_properties['results']['title'], 255);
       $file->filename = truncate_utf8($info['title'], 255);
     }
+    
     return $file;
   }
-
-  /**
-   * Returns information about the media. See http://video.search.yahoo.com/mrss.
-   *
-   * @return
-   *   If ATOM+MRSS information is available, a SimpleXML element containing
-   *   ATOM and MRSS elements, as per those respective specifications.
-   *
-   * @todo Would be better for the return value to be an array rather than a
-   *   SimpleXML element, but media_retrieve_xml() needs to be upgraded to
-   *   handle namespaces first.
-   */
-//  public function getMRSS() {
-//    $uri = $this->parse($this->embedCode);
-//    $video_id = arg(1, file_uri_target($uri));
-//    $rss_url = url('http://ustream.tv/feeds/api/videos/' . $video_id, array('query' => array('v' => '2')));
-//    // @todo Use media_retrieve_xml() once it's upgraded to include elements
-//    //   from all namespaces, not just the document default namespace.
-//    $request = drupal_http_request($rss_url);
-//    if (!isset($request->error)) {
-//      $entry = simplexml_load_string($request->data);
-//    }
-//    else {
-//      throw new Exception("Error Processing Request. (Error: {$response->code}, {$response->error})");
-//
-//      //if request wasn't successful, create object for return to avoid errors
-//      $entry = new SimpleXMLElement();
-//    }
-//    return $entry;
-//  }
-
+  
   /**
    * Returns information about the media. See http://www.oembed.com/.
    *
@@ -126,15 +161,14 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
    */
   public function getOEmbed() {
     $uri = $this->parse($this->embedCode);
-    $external_url = file_create_url($uri);
-    $oembed_url = url('http://www.ustream.tv/', array('query' => array('url' => $external_url, 'format' => 'json')));
+    $video_url = file_create_url($uri);
+    $oembed_url = url('http://www.ustream.tv/oembed', array('query' => array('url' => $video_url, 'format' => 'json')));
     $response = drupal_http_request($oembed_url);
     if (!isset($response->error)) {
       return drupal_json_decode($response->data);
     }
     else {
       throw new Exception("Error Processing Request. (Error: {$response->code}, {$response->error})");
-      return;
     }
   }
 }
