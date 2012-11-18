@@ -1,12 +1,11 @@
+
 /**
  * @file
  * Handles the JS for the views file browser. Note that this does not currently
  * support multiple file selection
  */
 
-
 (function ($) {
-
   Drupal.behaviors.mediaYouTubeBrowser = {
     attach: function (context, settings) {
 
@@ -34,12 +33,7 @@
         Drupal.media.browser.selectMedia(files);
         $("input[name='sumitted-video']").val(uri);
       });
-
-//      $('.')
     }
   }
 
 }(jQuery));
-
-
-

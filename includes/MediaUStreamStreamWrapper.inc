@@ -1,20 +1,23 @@
 <?php
 
 /**
- *  @file
- *  Create a UStream Stream Wrapper class for the Media/Resource module.
+ * @file
+ * Create a UStream Stream Wrapper class for the Media/Resource module.
  */
 
 /**
- *  Create an instance like this:
- *  $ustream = new MediaUStreamStreamWrapper('ustream://[recorded OR live]/[video-id]');
+ * Create an instance like this:
+ * $ustream = new MediaUStreamStreamWrapper('ustream://[recorded OR live]/[video-id]');
  */
 class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
-  
+
+  /**
+   * Returns the UStream mime type.
+   */
   static function getMimeType($uri, $mapping = NULL) {
     return 'video/ustream';
   }
-  
+
   /**
    *  Returns an array that describes the UStream video/channel.
    *  @param $url
@@ -35,14 +38,14 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
     $params = array();
     $params['recorded'] = ($parts[0] == 'recorded');
     $params['video_id'] = $parts[1];
-    
+
     // TODO: If we decide to go the DB storage route, this would be where we'd check to see if this video
     // is already known in the DB, and we'd then return it's saved data as $params.
     // The reason we'd do it here is because this function is along the execution path of the main entry
     // point for creating new MediaUStreamStreamWrapper instances, via file_stream_wrapper_get_instance_by_uri().
     return $params;
   }
-  
+
   /**
    * Returns a url in the format "http://ustream.tv/recorded/123456" or "http://ustream.tv/channel/123456".
    */
@@ -50,10 +53,13 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
     $parameters = $this->get_parameters();
     if ($parameters) {
       $type = $parameters['recorded'] ? 'recorded' : 'channel';
-      return "http://www.ustream.tv/$type/{$parameters['video_id']}";
+      return "http://ustream.tv/$type/{$parameters['video_id']}";
     }
   }
-  
+
+  /**
+   * Returns a url to the original image.
+   */
   function getOriginalThumbnailPath() {
     if ($this->parameters['recorded']) {
       $video_properties = MediaInternetUStreamHandler::getVideoProperties($this->parameters['video_id']);
@@ -66,13 +72,21 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
       }
       else {
         // This channel has no picture of its own, so use our placeholder image.
+        // TODO: strip the logo due to possible terms & rights issues.
         global $base_insecure_url;
+// Idea to replace it with this?
+// For another idea see the readme.
+//        global $base_url;
+//        $path = $base_url . '/misc/message-24-warning.png';
         $path = $base_insecure_url . '/' . drupal_get_path('module', 'media_ustream') . '/images/ustream_logo.png';
       }
     }
     return $path;
   }
-  
+
+  /**
+   * Returns a url to the local saved image.
+   */
   function getLocalThumbnailPath() {
     $parts = $this->get_parameters();
 

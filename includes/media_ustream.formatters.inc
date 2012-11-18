@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * Formatter functions for the media_ustream module.
  */
 
 /**
@@ -55,7 +56,7 @@ function media_ustream_file_formatter_video_view($file, $display, $langcode) {
  */
 function media_ustream_file_formatter_video_settings($form, &$form_state, $settings) {
   $element = array();
-  
+
   $element['width'] = array(
     '#title' => t('Width'),
     '#type' => 'textfield',
@@ -68,21 +69,13 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
     '#default_value' => $settings['height'],
     '#element_validate' => array('_ustream_validate_video_width_and_height'),
   );
-  
-  // Single Options.
+
   $element['autoplay'] = array(
     '#title' => t('Autoplay video on load'),
     '#type' => 'checkbox',
     '#default_value' => $settings['autoplay'],
   );
-  
-  // This option is available with the old <object> embed code, but not the new <iframe> code.
-//   $element['allowfullscreen'] = array(
-//     '#title' => t('Allow fullscreen'),
-//     '#type' => 'checkbox',
-//     '#default_value' => $settings['allowfullscreen'],
-//   );
-  
+
   $element['protocol_specify'] = array(
     '#title' => t('Specify an http protocol'),
     '#type' => 'checkbox',
@@ -90,7 +83,7 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
     '#description' => t('An explicit protocol may be neccesary for videos embedded in RSS feeds and emails.
         If no protocol is specified, iframes will be protocol relative.'),
   );
-  
+
   $element['protocol'] = array(
     '#title' => t('Iframe protocol'),
     '#type' => 'radios',
@@ -105,15 +98,7 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
       ),
     ),
   );
-  
-  // UStream no longer requires the use of an API Key.
-//   $element['ustream_api_key'] = array(
-//     '#title' => t('UStream API Key'),
-//     '#type' => 'textfield',
-//     '#default_value' => $settings['ustream_api_key'],
-//     '#description' => t('UStream no longer requires the use of an API Key.'),
-//   );
-  
+
   return $element;
 }
 
@@ -121,7 +106,8 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
  * Validation for width and height.
  */
 function _ustream_validate_video_width_and_height($element, &$form_state, $form) {
-  // Check if the value is a number with an optional decimal or percentage sign, or "auto".
+  // Check if the value is a number with an optional
+  // decimal or percentage sign, or "auto".
   if (!empty($element['#value']) && !preg_match('/^(auto|([0-9]*(\.[0-9]+)?%?))$/', $element['#value'])) {
     form_error($element, t(
       "The value entered for @dimension is invalid.
@@ -139,15 +125,16 @@ function media_ustream_file_formatter_image_view($file, $display, $langcode) {
   $scheme = file_uri_scheme($file->uri);
   if ($scheme == 'ustream') {
     $wrapper = file_stream_wrapper_get_instance_by_uri($file->uri);
-    
-    // Only attempt to style the image if a valid image style was specified in the $display settings.
+
+    // Only attempt to style the image if a valid image
+    // style was specified in the $display settings.
     $image_style = $display['settings']['image_style'];
     $valid_image_styles = image_style_options(FALSE);
     if (empty($image_style) || !isset($valid_image_styles[$image_style])) {
       $element = array(
         '#theme' => 'image',
         '#path' => $wrapper->getOriginalThumbnailPath(),
-        '#alt' => $file->filename,
+        '#alt' => isset($file->override['attributes']['alt']) ? $file->override['attributes']['alt'] : $file->filename,
       );
     }
     else {
@@ -155,7 +142,7 @@ function media_ustream_file_formatter_image_view($file, $display, $langcode) {
         '#theme' => 'image_style',
         '#style_name' => $image_style,
         '#path' => $wrapper->getLocalThumbnailPath(),
-        '#alt' => $file->filename,
+        '#alt' => isset($file->override['attributes']['alt']) ? $file->override['attributes']['alt'] : $file->filename,
       );
     }
     return $element;
@@ -195,20 +182,6 @@ function media_ustream_file_default_displays() {
       'height' => 340,
       'autoplay' => FALSE,
     ),
-    // Legacy view modes included to support older versions of Media,
-    // before #1051090 went through. They do no harm and can sit here
-    // until there is a Media 2.x stable.
-    // @TODO: Remove when Media 2.0 is released.
-    'media_large' => array(
-      'width' => 560,
-      'height' => 340,
-      'autoplay' => FALSE,
-    ),
-    'media_original' => array(
-      'width' => 640,
-      'height' => 400,
-      'autoplay' => media_ustream_variable_get('autoplay'),
-    ),
   );
   foreach ($default_video_settings as $view_mode => $settings) {
     $display_name = 'video__' . $view_mode . '__media_ustream_video';
@@ -230,10 +203,6 @@ function media_ustream_file_default_displays() {
     'default' => 'large',
     'preview' => 'square_thumbnail',
     'teaser' => 'large',
-    // Legacy view modes, see note above.
-    'media_preview' => 'square_thumbnail',
-    'media_large' => 'large',
-    'media_original' => '',
   );
   foreach ($default_image_styles as $view_mode => $image_style) {
     $display_name = 'video__' . $view_mode . '__media_ustream_image';

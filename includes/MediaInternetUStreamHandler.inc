@@ -11,7 +11,6 @@
  * @see hook_media_internet_providers().
  */
 class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
-  
   /**
    * Call the UStream API to fetch the video information.
    *
@@ -25,7 +24,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     $response = drupal_http_request(MEDIA_USTREAM_REST_API . '/json/video/' . $id . '/getInfo');
     return drupal_json_decode($response->data);
   }
-  
+
   /**
    * Call the UStream API to fetch the channel information.
    *
@@ -39,7 +38,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     $response = drupal_http_request(MEDIA_USTREAM_REST_API . '/json/channel/' . $id . '/getInfo');
     return drupal_json_decode($response->data);
   }
-  
+
   /**
    * Check if a UStream video/channel id is valid.
    *
@@ -73,7 +72,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     }
     return FALSE;
   }
-  
+
   /**
    * Check if a UStream id is already stored in the DB.
    *
@@ -88,13 +87,13 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     $results = $file_query->entityCondition('entity_type', 'file')
       ->propertyCondition('uri', "ustream://$type/$id")
       ->execute();
-    
+
     return (bool)$results;
   }
-  
+
   public function parse($embedCode) {
     $embedCode = trim($embedCode);
-    
+
     // First, check if it's a recorded video pattern.
     $recorded_patterns = array(
       '@ustream\.tv/recorded/(\d+)@i', // Matches the URL for the video page.
@@ -108,7 +107,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
         return file_stream_wrapper_uri_normalize('ustream://recorded/' . $matches[1]);
       }
     }
-    
+
     // If it's not a recorded video, check if it's a live channel.
     $matches = array();
     $match = '';
@@ -121,6 +120,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
         $match = $properties['results']['id'];
       }
     }
+
     // If the channel name didn't match, check if it's a live channel embed code.
     if (!$match) {
       preg_match('@ustream\.tv/embed/([^"\&\?]+)@i', $embedCode, $matches);
@@ -128,29 +128,29 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
         $match = $matches[1];
       }
     }
-    
+
     if ($match) {
       return file_stream_wrapper_uri_normalize('ustream://live/' . $match);
     }
   }
-  
+
   public function claim($embedCode) {
     if ($this->parse($embedCode)) {
       return TRUE;
     }
   }
-  
+
   public function getFileObject() {
     $uri = $this->parse($this->embedCode);
     $file = file_uri_to_object($uri, TRUE);
-    
+
     if (empty($file->fid) && $info = $this->getOEmbed()) {
       $file->filename = truncate_utf8($info['title'], 255);
     }
-    
+
     return $file;
   }
-  
+
   /**
    * Returns information about the media. See http://www.oembed.com/.
    *
@@ -162,7 +162,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
   public function getOEmbed() {
     $uri = $this->parse($this->embedCode);
     $video_url = file_create_url($uri);
-    $oembed_url = url('http://www.ustream.tv/oembed', array('query' => array('url' => $video_url, 'format' => 'json')));
+    $oembed_url = url('http://ustream.tv/oembed', array('query' => array('url' => $video_url, 'format' => 'json')));
     $response = drupal_http_request($oembed_url);
     if (!isset($response->error)) {
       return drupal_json_decode($response->data);
