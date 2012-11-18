@@ -11,8 +11,7 @@
  * Allow editors to put in a ustream username to display on the browser.
  * Allow editors to log in w/ their credentials.
  * Allow editors to upload videos to UStream.
-
-
+ *
  */
 
 // A registry of variable_get defaults.
@@ -27,7 +26,7 @@ include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'media_ustream') . '/
 function media_ustream_media_internet_providers() {
   $info['MediaInternetUStreamHandler'] = array(
     'title' => t('UStream'),
-//    'image' => drupal_get_path('module', 'media_ustream') . '/images/stream-ustream.png',
+    'image' => drupal_get_path('module', 'media_ustream') . '/images/ustream_logo.png',
   );
 
   return $info;
@@ -116,7 +115,8 @@ function media_ustream_add($form, &$form_state = array()) {
   module_load_include('inc', 'media', 'includes/media.browser');
 
   // Our search term can come from the form, or from the pager.
-  $term = isset($form_state['input']['search']) ? $form_state['input']['search'] : (isset($_GET['search']) ? $_GET['search'] : '');
+  $term = isset($form_state['input']['search']) ? $form_state['input']['search']
+      : (isset($_GET['search']) ? $_GET['search'] : '');
 
   $form['search'] = array(
     '#type' => 'textfield',
@@ -138,7 +138,8 @@ function media_ustream_add($form, &$form_state = array()) {
   if (!empty($term)) {
     $search = media_ustream_video_search(array('q' => $term, 'max-results' => 12, 'start-index' => $page * 12 + 1));
   }
-  $form['videos']['#prefix'] = '<div id="container"><div id="scrollbox"><ul id="media-browser-library-list" class="media-list-thumbnails">';
+  $form['videos']['#prefix'] = '<div id="container"><div id="scrollbox"><ul id="media-browser-library-list"
+      class="media-list-thumbnails">';
   $form['videos']['#suffix'] = '</ul><div id="status"></div></div></div>';
 
   $empty = FALSE;
@@ -179,11 +180,13 @@ function media_ustream_add($form, &$form_state = array()) {
   }
 
   if (!count($files)) {
-    $empty= TRUE;
+    $empty = TRUE;
   }
   if ($empty) {
     $form['empty'] = array(
-      '#markup' => '<div class="empty-message">' . t('No videos match your search criteria. Please try again.') . '</div>',
+      '#markup' => '<div class="empty-message">'
+          . t('No videos match your search criteria. Please try again.')
+          . '</div>',
     );
   }
 
@@ -216,20 +219,17 @@ function media_ustream_add($form, &$form_state = array()) {
   // Add the files to JS so that they are accessible inside the browser
   drupal_add_js(array('media' => array('files' => $files)), 'setting');
 
-    // Add media browser javascript and CSS.
+  // Add media browser javascript and CSS.
 //  drupal_add_js(drupal_get_path('module', 'media_ustream') . '/js/media-ustream.browser.js');
-  // We need to see if we can deprecate this
- // drupal_add_js(drupal_get_path('module', 'media') . '/js/plugins/media.library.js');
-  // We should abstract this into a standard css file so all implementers have
-  // it by default
+  // We should abstract this into a standard css file so all implementers have it by default
 //  drupal_add_css(drupal_get_path('module', 'media') . '/js/plugins/media.library.css');
-
 
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
   );
+  
   return $form;
 }
 
@@ -303,7 +303,7 @@ function media_ustream_add_submit($form, &$form_state) {
   }
 
   if (!$file->fid) {
-    form_set_error('url', t('The file %file could not be saved. An unknown error has occurred.', array('%file' => $uri)));
+    form_set_error('url', t('The file %file could not be saved. An unknown error occurred.', array('%file' => $uri)));
     return;
   }
   else {
@@ -324,10 +324,12 @@ function media_ustream_add_submit($form, &$form_state) {
   }
 }
 
-function media_ustream_video_search($options = array()) {
-  $options['v'] = 2;
-  return media_retrieve_xml(url(MEDIA_USTREAM_REST_API, array('query' => $options)));
-}
+//function media_ustream_video_search($options = array()) {
+//  $options['v'] = 2;
+//  return media_retrieve_xml(url(MEDIA_USTREAM_REST_API . '/json', array('query' => $options)));
+//}
+
+
 
 /**
  * Check to ensure that a given id is valid.
@@ -353,10 +355,89 @@ function media_ustream_valid_id($id, $refresh = FALSE) {
     $ids[$id] = $cache->data;
     return $ids[$id];
   }
-
-  $url = url(MEDIA_USTREAM_REST_API . '/' . $id);
+  
+  // @TODO: NOTE to Cluster: This code is not only calling a non-existent API function, but it's also incorrectly
+  // interpreting the results. The API always responds with a 200 code, even when the request returns an error.
+  // (Yes, I realize this is a failure on UStream's part, but we have to deal with it). Looking at the 'error' key
+  // in the json output should be sufficient, since it's NULL on a good result.
+  // In addition, you'll need to update it to be able to differentiate between user IDs, channel names, and video/channel IDs,
+  // so that you know which API function to call.
+  $url = url(MEDIA_USTREAM_REST_API . '/json/' . $id);
   $response = drupal_http_request($url, array('method' => 'HEAD'));
   $ids[$id] = ($response->code == 200);
   cache_set('media_ustream:id:' . $id, $ids[$id], 'cache_media_xml', media_variable_get('xml_cache_expire', 3600));
   return $ids[$id];
+}
+
+function media_ustream_test_media_id($vid) {
+  $handler = new MediaInternetUStreamHandler($vid);
+  return $handler->getVideoProperties($vid);
+}
+
+function media_ustream_test_channel_id($cid) {
+  $handler = new MediaInternetUStreamHandler($cid);
+  return $handler->getChannelProperties($cid);
+}
+
+
+function media_ustream_channel_search($options = array()) {
+//print_r($options['q']);
+//exit;
+//http://api.ustream.tv/html/channel/all/search/title:like:party
+//https://api.ustream.tv/
+//$ustream_results = media_retrieve_xml(url(MEDIA_USTREAM_REST_API . '/xml/channel/all/search/title:like:' . $options['q']));
+//print_r($ustream_results);
+//exit;
+//foreach ($ustream_results['results']['array'] as $channel) {
+//print_r($video['id']);
+//  $results[] = media_ustream_test_channel_id($channel['id']);
+//$results[]['embedTag'] = '';
+
+//unset($results['embedTag']);
+//unset($results['chat']);
+//print_r($results);
+//exit;
+//  print_r(media_ustream_test_media_id($video['id']));
+
+//}
+//$xml = new SimpleXMLElement('<root/>');
+//array_walk_recursive($results, array ($xml, 'addChild'));
+//print $xml->asXML();
+
+//exit;
+//return $results;
+
+//exit;
+//  return media_retrieve_xml(url(MEDIA_USTREAM_REST_API . '/xml/channel/all/search/title:like:' . $options['q']));
+}
+function media_ustream_user_search() {
+
+}
+
+function media_ustream_video_search() {
+}
+
+function media_ustream_media_search_register() {
+  $search_providers = array(
+    'ustream_channel' => array(
+      'label' => 'UStream Channels',
+      'version' => 1,
+      'validate_id' => 'media_ustream_valid_id',
+      'callback' => 'media_ustream_channel_search',
+    ),
+    'ustream_user' => array(
+      'label' => 'UStream Users',
+      'version' => 1,
+      'validate_id' => 'media_ustream_valid_id',
+      'callback' => 'media_ustream_user_search',
+    ),
+    'ustream_video' => array(
+      'label' => 'UStream Videos',
+      'version' => 1,
+      'validate_id' => 'media_ustream_valid_id',
+      'callback' => 'media_ustream_video_search',
+    ),
+
+  );
+  return $search_providers;
 }

@@ -15,8 +15,7 @@ function media_ustream_file_formatter_info() {
     'view callback' => 'media_ustream_file_formatter_video_view',
     'settings callback' => 'media_ustream_file_formatter_video_settings',
   );
-  foreach (array('width', 'height', 'autoplay', 'allowfullscreen', 'protocol', 'protocol_specify', 'html5', 'ustream_api_key') as $setting) {
-//  foreach (array('width', 'height', 'autohide', 'autoplay', 'color', 'controls', 'enablejsapi', 'loop', 'modestbranding', 'nocookie', 'origin', 'protocol', 'protocol_specify', 'rel', 'showinfo', 'theme', 'ustream_api_key') as $setting) {
+  foreach (media_ustream_variable_default() as $setting => $default_value) {
     $formatters['media_ustream_video']['default settings'][$setting] = media_ustream_variable_get($setting);
   }
 
@@ -44,11 +43,8 @@ function media_ustream_file_formatter_video_view($file, $display, $langcode) {
       '#uri' => $file->uri,
       '#options' => array(),
     );
-
-    foreach (array('width', 'height', 'autoplay', 'allowfullscreen', 'protocol', 'protocol_specify', 'html5', 'ustream_api_key') as $setting) {
-//    foreach (array('width', 'height', 'autohide', 'autoplay', 'color', 'controls', 'enablejsapi', 'loop', 'modestbranding', 'nocookie', 'origin', 'protocol', 'protocol_specify', 'rel', 'showinfo', 'theme', 'ustream_api_key') as $setting) {
+    foreach (media_ustream_variable_default() as $setting => $default_value) {
       $element['#options'][$setting] = isset($file->override[$setting]) ? $file->override[$setting] : $display['settings'][$setting];
-
     }
     return $element;
   }
@@ -59,7 +55,7 @@ function media_ustream_file_formatter_video_view($file, $display, $langcode) {
  */
 function media_ustream_file_formatter_video_settings($form, &$form_state, $settings) {
   $element = array();
-
+  
   $element['width'] = array(
     '#title' => t('Width'),
     '#type' => 'textfield',
@@ -72,111 +68,29 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
     '#default_value' => $settings['height'],
     '#element_validate' => array('_ustream_validate_video_width_and_height'),
   );
-
-  // @see 
-
-  // Multiple options.
-/**
-  $element['theme'] = array(
-    '#title' => t('Player theme'),
-    '#type' => 'radios',
-    '#options' => array(
-      'dark' => t('Dark'),
-      'light' => t('Light'),
-    ),
-    '#default_value' => $settings['theme'],
-  );
-**/
-/**
-  $element['color'] = array(
-    '#title' => t('Progress bar color'),
-    '#type' => 'radios',
-    '#options' => array(
-      'red' => t('Red'),
-      'white' => t('White'),
-    ),
-    '#default_value' => $settings['color'],
-  );
-**/
-/**
-  $element['autohide'] = array(
-    '#title' => t('Controls during playback'),
-    '#type' => 'radios',
-    '#options' => array(
-      '0' => t('Keep progress bar and player controls on screen while playing'),
-      '2' => t('Hide progress bar while playing'),
-      '1' => t('Hide progress bar and player controls'),
-    ),
-    '#default_value' => $settings['autohide'],
-  );
-**/
+  
   // Single Options.
   $element['autoplay'] = array(
     '#title' => t('Autoplay video on load'),
     '#type' => 'checkbox',
     '#default_value' => $settings['autoplay'],
   );
-
-  $element['allowfullscreen'] = array(
-    '#title' => t('Allow fullscreen'),
-    '#type' => 'radios',
-    '#options' => array(
-      'true' => t('true'),
-      'false' => t('false'),
-    ),
-    '#default_value' => $settings['allowfullscreen'],
-  );
-
-/**
-  $element['loop'] = array(
-    '#title' => t('Loop video'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['loop'],
-  );
-**/
-  // Note: make sure the positive/negitive language lines up with option
-  // processing in media_ustream.theme.inc.
-/**
-  $element['controls'] = array(
-    '#title' => t('Load player with controls hidden (chromeless player)'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['controls'],
-  );
-**/
-/**
-  $element['showinfo'] = array(
-    '#title' => t('Display video title and uploader'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['showinfo'],
-  );
-**/
-/**
-  $element['modestbranding'] = array(
-    '#title' => t('Remove UStream logo from the control bar'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['modestbranding'],
-  );
-**/
-/**
-  $element['rel'] = array(
-    '#title' => t('Show related videos when playback ends'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['rel'],
-  );
-**/
-/**
-  $element['nocookie'] = array(
-    '#title' => t('Use privacy enhanced (no cookie) mode'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['nocookie'],
-  );
-**/
+  
+  // This option is available with the old <object> embed code, but not the new <iframe> code.
+//   $element['allowfullscreen'] = array(
+//     '#title' => t('Allow fullscreen'),
+//     '#type' => 'checkbox',
+//     '#default_value' => $settings['allowfullscreen'],
+//   );
+  
   $element['protocol_specify'] = array(
     '#title' => t('Specify an http protocol'),
     '#type' => 'checkbox',
     '#default_value' => $settings['protocol_specify'],
-    '#description' => t('An explicit protocol may be neccesary for videos embedded in RSS feeds and emails. If no protocol is specified, iframes will be protocol relative.'),
+    '#description' => t('An explicit protocol may be neccesary for videos embedded in RSS feeds and emails.
+        If no protocol is specified, iframes will be protocol relative.'),
   );
+  
   $element['protocol'] = array(
     '#title' => t('Iframe protocol'),
     '#type' => 'radios',
@@ -191,41 +105,15 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
       ),
     ),
   );
-
-  // JS api.
-/**
-  $element['enablejsapi'] = array(
-    '#title' => t('Enable the <a href="">Javascript API</a>'),
-    '#type' => 'checkbox',
-    '#default_value' => $settings['enablejsapi'],
-    '#description' => 'An id in the format <code>media-ustream-{video_id}</code> will be added to each iframe.',
-  );
-
-  $element['origin'] = array(
-    '#title' => t('Origin'),
-    '#type' => 'textfield',
-    '#description' => t('If the Javascript API is enabled, enter your site\'s domain for added security.'),
-    '#default_value' => $settings['origin'],
-    '#states' => array(
-      'invisible' => array(
-        ':input[name="displays[media_ustream_video][settings][enablejsapi]"]' => array('checked' => FALSE),
-      ),
-    ),
-    '#element_validate' => array('_ustream_validate_jsapi_domain'),
-  );
-**/
-
-  $element['ustream_api_key'] = array(
-    '#title' => t('UStream API Key'),
-    '#type' => 'textfield',
-    '#default_value' => $settings['ustream_api_key'],
-    '#description' => t('The API is required for thumbnails and other features. You will first need to apply for an API Developer Key from the !ustream.', array('!ustream' => l(t('Ustream Application Registration page'), 'http://developer.ustream.tv/user/register'))),
-
-
-//    '#element_validate' => array('_ustream_validate_video_width_and_height'),
-  );
-
-
+  
+  // UStream no longer requires the use of an API Key.
+//   $element['ustream_api_key'] = array(
+//     '#title' => t('UStream API Key'),
+//     '#type' => 'textfield',
+//     '#default_value' => $settings['ustream_api_key'],
+//     '#description' => t('UStream no longer requires the use of an API Key.'),
+//   );
+  
   return $element;
 }
 
@@ -233,21 +121,14 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
  * Validation for width and height.
  */
 function _ustream_validate_video_width_and_height($element, &$form_state, $form) {
-
   // Check if the value is a number with an optional decimal or percentage sign, or "auto".
   if (!empty($element['#value']) && !preg_match('/^(auto|([0-9]*(\.[0-9]+)?%?))$/', $element['#value'])) {
-    form_error($element, t("The value entered for @dimension is invalid. Please insert a unitless integer for pixels, a percent, or \"auto\". Note that percent and auto may not function correctly depending on the browser and doctype.", array('@dimension' => $element['#title'])));
-  }
-}
-
-/**
- * Validation for Js API Origin.
- */
-function _ustream_validate_jsapi_domain ($element, &$form_state, $form) {
-
-  // Check if the value is a url with http/s and no trailing directories.
-  if (!empty($element['#value']) && !preg_match('/^https?\:\/\/[a-zA-Z0-9\-\.]+\.([a-zA-Z]{2,4}){1,2}$/', $element['#value'])) {
-    form_error($element, t('Please insert a valid domain in the format http://www.yourdomain.com'));
+    form_error($element, t(
+      "The value entered for @dimension is invalid.
+      Please insert a unitless integer for pixels, a percent, or \"auto\".
+      Note that percent and auto may not function correctly depending on the browser and doctype.",
+      array('@dimension' => $element['#title']))
+    );
   }
 }
 
@@ -258,6 +139,8 @@ function media_ustream_file_formatter_image_view($file, $display, $langcode) {
   $scheme = file_uri_scheme($file->uri);
   if ($scheme == 'ustream') {
     $wrapper = file_stream_wrapper_get_instance_by_uri($file->uri);
+    
+    // Only attempt to style the image if a valid image style was specified in the $display settings.
     $image_style = $display['settings']['image_style'];
     $valid_image_styles = image_style_options(FALSE);
     if (empty($image_style) || !isset($valid_image_styles[$image_style])) {
@@ -340,7 +223,7 @@ function media_ustream_file_default_displays() {
 
   // Default settings for displaying a video preview image.
   // We enable preview images even for view modes that also play video
-  // for use inside a running WYSIWYG editor. We weight them so video 
+  // for use inside a running WYSIWYG editor. We weight them so video
   // formatters come first in the cascade to make sure the video formatter
   // is used whenever possible.
   $default_image_styles = array(
