@@ -186,29 +186,6 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
   }
 
   /**
-   * Public function preparse().
-   *
-   * Created to save some time.
-   */
-  public function preparse($embedCode) {
-    $recorded_patterns = array(
-      '@ustream\.tv/recorded/(\d+)@i',             // Matches the URL for the video page.
-      '@ustream\.tv/embed/recorded/([^"\&\?]+)@i', // Matches the URL from the embed code for recorded videos.
-      '@ustream\.tv/channel/([a-zA-Z0-9_\-]+)@i',  // channel.
-      '@ustream\.tv/embed/([^"\&\?]+)@i',          // channel embed.
-      '@ustream\.tv/user/([a-zA-Z0-9_\-]+)@i',     // Matches the URL for the user page.
-      '@ustream\.tv/([a-zA-Z0-9_\-]+)@i',          // channel or user
-    );
-    foreach ($recorded_patterns as $pattern) {
-      preg_match($pattern, $embedCode, $matches);
-      if (!empty($matches[1])) {
-        return TRUE;
-      }
-    }
-    return FALSE;
-  }
-
-  /**
    * Public function parse().
    */
   public function parse($embedCode) {
@@ -221,7 +198,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
       '@ustream\.tv/channel/([a-zA-Z0-9_\-]+)@i'  => 'live',          // Channel.
       '@ustream\.tv/embed/([^"\&\?]+)@i'          => 'live',          // Channel embed.
       '@ustream\.tv/user/([a-zA-Z0-9_\-]+)@i'     => 'user',          // Matches the URL for the user page.
-      '@ustream\.tv/([a-zA-Z0-9_\-]+)@i'          => 'channeloruser', // User channel or promoted channel.
+      '@ustream\.tv/([a-zA-Z0-9_\-]+)$@i'         => 'channeloruser', // User channel or promoted channel.
     );
 
     foreach ($recorded_patterns as $pattern => $case) {
@@ -234,6 +211,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
           // Grab the file id, load the file and return normalized string.
           $existing_file = file_load($fid);
           $parts = explode('://', $existing_file->uri);
+          // We already know the file exists so [1] Will be available.
           $file_uri = $parts[1];
         }
         elseif ($properties = self::validId(check_plain($matches[1]), $case)) {
@@ -258,7 +236,6 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
             $link = l("Media: UStream's README", 'sites/all/modules/media_ustream/README.txt');
           }
           drupal_set_message("Media: UStream cannot save $match[0], due to limitations in UStream's API. Please refer to $link under the URL FORMATS heading for more information.", 'error', FALSE);
-          return FALSE;
         }
       }
     }
@@ -268,10 +245,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
    * Function claim().
    */
   public function claim($embedCode) {
-    // Preparse is the same as parse, but it only returns
-    // a bool true/false and does not return a file.
-    // I've done this to save speed. (and it's a lot).
-    if (empty($this->fileObject->fid) && $this->parse($embedCode)) {
+    if ($this->parse($embedCode)) {
       return TRUE;
     }
   }
@@ -298,20 +272,8 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
    *   'url', and other information as specified by the oEmbed standard.
    *   Otherwise, NULL.
    */
-  public function getOEmbed() {
-    // Deprecated in favour of the JSON API. (+ it isnt really working that good for us).
-    return FALSE;
-  }
-
-  // I've created this functions, because getOEmbed() is
-  // abstracted and we might use it later on again (original state) and
-  // we call getViaOEmbed from parse(), so that's the other way arround.
-  // We only need this to map channels to user accounts if
-  //the channel name != the user name, that's why we need this.
-  // See parse() for details.
   static public function getViaOEmbed($uri) {
     $oembed_url = 'http://www.ustream.tv/oembed?url=http%3A//ustream.tv/' . $uri . '&format=json';
-
     $response = drupal_http_request($oembed_url);
     if (empty($response->error)) {
       return drupal_json_decode($response->data);
