@@ -114,8 +114,9 @@ function media_ustream_variable_default($name = NULL) {
   if (!isset($defaults)) {
     $defaults = array(
       'width' => 640,
-      'height' => 400,
-      'autoplay' => FALSE,
+      'height' => 393,
+      'autoplay_live' => FALSE,
+      'autoplay_recorded' => FALSE,
       'protocol' => 'https:',
       'protocol_specify' => FALSE,
     );

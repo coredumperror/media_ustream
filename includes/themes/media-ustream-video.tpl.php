@@ -23,13 +23,5 @@
 
 ?>
 <div class="<?php print $classes; ?> media-ustream-<?php print $video_id; ?>">
-  <iframe
-    class="media-ustream-player"
-    width="<?php print $width; ?>"
-    height="<?php print $height; ?>"
-    title="<?php print $title; ?>"
-    src="<?php print $url; ?>"
-    style="border: 0">
-    <?php print $alternative_content; ?>
-  </iframe>
+  <iframe class="media-ustream-player" width="<?php print $width; ?>" height="<?php print $height; ?>" title="<?php print $title; ?>" src="<?php print $url; ?>" style="border: 0"><?php print $alternative_content; ?></iframe>
 </div>

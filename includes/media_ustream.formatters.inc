@@ -70,10 +70,16 @@ function media_ustream_file_formatter_video_settings($form, &$form_state, $setti
     '#element_validate' => array('_ustream_validate_video_width_and_height'),
   );
 
-  $element['autoplay'] = array(
-    '#title' => t('Autoplay video on load'),
+  $element['autoplay_live'] = array(
+    '#title' => t('Autoplay live channels'),
     '#type' => 'checkbox',
-    '#default_value' => $settings['autoplay'],
+    '#default_value' => $settings['autoplay_live'],
+  );
+
+  $element['autoplay_recorded'] = array(
+    '#title' => t('Autoplay recorded videos'),
+    '#type' => 'checkbox',
+    '#default_value' => $settings['autoplay_recorded'],
   );
 
   $element['protocol_specify'] = array(
@@ -175,13 +181,32 @@ function media_ustream_file_default_displays() {
   $default_video_settings = array(
     'default' => array(
       'width' => 640,
-      'height' => 390,
+      'height' => 393,
     ),
     'teaser' => array(
       'width' => 560,
-      'height' => 340,
-      'autoplay' => FALSE,
+      'height' => 348,
+      'autoplay_live' => FALSE,
+      'autoplay_recorded' => FALSE,
     ),
+
+    // Legacy view modes included to support older versions of Media,
+    // before #1051090 went through. They do no harm and can sit here
+    // until there is a Media 2.x stable.
+    // @TODO: Remove when Media 2.0 is released.
+    'media_large' => array(
+      'width' => 560,
+      'height' => 348,
+      'autoplay_live' => FALSE,
+      'autoplay_recorded' => FALSE,
+    ),
+    'media_original' => array(
+      'width' => 640,
+      'height' => 393,
+      'autoplay_live' => media_ustream_variable_get('autoplay_live'),
+      'autoplay_recorded' => media_ustream_variable_get('autoplay_recorded'),
+    ),
+
   );
   foreach ($default_video_settings as $view_mode => $settings) {
     $display_name = 'video__' . $view_mode . '__media_ustream_video';
@@ -203,6 +228,12 @@ function media_ustream_file_default_displays() {
     'default' => 'large',
     'preview' => 'square_thumbnail',
     'teaser' => 'large',
+
+    // Legacy view modes, see note above.
+    'media_preview' => 'square_thumbnail',
+    'media_large' => 'large',
+    'media_original' => '',
+
   );
   foreach ($default_image_styles as $view_mode => $image_style) {
     $display_name = 'video__' . $view_mode . '__media_ustream_image';

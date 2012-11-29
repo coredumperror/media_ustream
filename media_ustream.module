@@ -26,7 +26,6 @@ include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'media_ustream') . '/
 function media_ustream_media_internet_providers() {
   $info['MediaInternetUStreamHandler'] = array(
     'title' => t('UStream'),
-    'image' => drupal_get_path('module', 'media_ustream') . '/images/ustream_logo.png',
   );
 
   return $info;
@@ -61,18 +60,6 @@ function media_ustream_theme($existing, $type, $theme, $path) {
 }
 
 /**
- * Implements hook_media_parse().
- *
- * @todo This hook should be deprecated. Refactor Media module to not call it
- *   any more, since media_internet should be able to automatically route to the
- *   appropriate handler.
- */
-function media_ustream_media_parse($embed_code) {
-  $handler = new MediaInternetUStreamHandler($embed_code);
-  return $handler->parse($embed_code);
-}
-
-/**
  * Implements hook_file_mimetype_mapping_alter().
  *
  * Regster the video/youtube mimetype.
@@ -102,32 +89,4 @@ function media_ustream_ctools_plugin_api($owner, $api) {
   if (isset($api_versions[$owner][$api])) {
     return array('version' => $api_versions[$owner][$api]);
   }
-}
-
-/**
- * Implements hook_media_browser_plugin_info().
- */
-function media_ustream_media_browser_plugin_info() {
-  $info['ustream'] = array(
-    'title' => t('UStream'),
-    'class' => 'MediaUStreamBrowser',
-  );
-
-  return $info;
-}
-
-/**
- * Test a media file via the $vid.
- */
-function media_ustream_test_media_id($vid) {
-  $handler = new MediaInternetUStreamHandler($vid);
-  return $handler->getVideoProperties($vid);
-}
-
-/**
- * Test a media file via the $vid.
- */
-function media_ustream_test_channel_id($cid) {
-  $handler = new MediaInternetUStreamHandler($cid);
-  return $handler->getChannelProperties($cid);
 }

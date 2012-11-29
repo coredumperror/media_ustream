@@ -24,6 +24,7 @@ function media_ustream_preprocess_media_ustream_video(&$variables) {
     // TODO: Keep track of this.
     // No idea what this is for, but ustream incudes
     // it in the embed tags which they generate.
+    /// @coredumperror. > UPDATE: this is oembed.
     'v' => 3,
     // Enables hardware acceleration.
     'wmode' => 'direct',
@@ -36,21 +37,14 @@ function media_ustream_preprocess_media_ustream_video(&$variables) {
     // and 'lc' and 'oc' don't seem to actually do anything.
   );
 
-  // These GET args default to 0. If the option is true, set value to 1.
-  foreach (array('autoplay') as $option) {
-    if ($variables['options'][$option]) {
-      $query[$option] = 1;
-    }
+  // If this is a recoded video, and "autoplay_recorded" is enabled, set the autoplay flag.
+  // Ditto for live channels.
+  if (($parameters['recorded'] && $variables['options']['autoplay_recorded'])
+      || (!$parameters['recorded'] && $variables['options']['autoplay_live'])) {
+    $query['autoplay'] = 1;
   }
 
-  if ($variables['options']['protocol_specify']) {
-    $protocol = $variables['options']['protocol'];
-  }
-  else {
-    $protocol = '';
-  }
-
-  // Add some options as their own template variables.
+  // Add some options directly to the template variables.
   foreach (array('width', 'height') as $themevar) {
     $variables[$themevar] = $variables['options'][$themevar];
   }
@@ -70,17 +64,26 @@ function media_ustream_preprocess_media_ustream_video(&$variables) {
   // Add template variables for accessibility.
   $variables['title'] = check_plain($file_object->filename);
 
-  // Build the iframe's src URL, with playback options set via query string.
-  if ($parameters['recorded']) {
-    $url = "$protocol//www.ustream.tv/embed/recorded/{$variables['video_id']}";
-  }
-  else {
-    $url = "$protocol//www.ustream.tv/embed/{$variables['video_id']}";
-  }
-
-  // @TODO: Find an easy/ not too expensive way to get the video description
+  // @TODO: Find an easy/inexpensive way to get the video description
   // to use for the alternative content.
+  // Note from coredumperror: Are there even any browsers left which don't support iframes?
   $variables['alternative_content'] = t('Video of @title', array('@title' => $variables['title']));
 
-  $variables['url'] = url($url, array('query' => $query, 'external' => TRUE));
+  // If the field is configured to use a specific protocol, use it.
+  // Otherwise use a protocol-relative URL.
+  if ($variables['options']['protocol_specify']) {
+    $protocol = $variables['options']['protocol'];
+  }
+  else {
+    $protocol = 'https:';
+  }
+
+  // Build the iframe's src URL, with playback options set via query string.
+  if ($parameters['recorded']) {
+    $url = "//www.ustream.tv/embed/recorded/{$variables['video_id']}";
+  }
+  else {
+    $url = "//www.ustream.tv/embed/{$variables['video_id']}";
+  }
+  $variables['url'] = url($protocol . $url, array('query' => $query, 'external' => TRUE));
 }

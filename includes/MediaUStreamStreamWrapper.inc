@@ -47,7 +47,9 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
   }
 
   /**
-   * Returns a url in the format "http://ustream.tv/recorded/123456" or "http://ustream.tv/channel/123456".
+   * Returns a url in the format
+   * "http://ustream.tv/recorded/123456"
+   * or "http://ustream.tv/channel/123456".
    */
   function interpolateUrl() {
     $parameters = $this->get_parameters();
@@ -72,13 +74,14 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
       }
       else {
         // This channel has no picture of its own, so use our placeholder image.
-        // TODO: strip the logo due to possible terms & rights issues.
         global $base_insecure_url;
-// Idea to replace it with this?
-// For another idea see the readme.
-//        global $base_url;
-//        $path = $base_url . '/misc/message-24-warning.png';
-        $path = $base_insecure_url . '/' . drupal_get_path('module', 'media_ustream') . '/images/ustream_logo.png';
+        // NOTE: $base_insecure_url is important because it explicitly uses http:// rather than https://, which $base_url will use
+        // if the site it set up for https:// for logged in users.
+
+        // TODO: / NOTE: Media module can really use a 'no image available' image.
+        //$path = $base_insecure_url . '/misc/message-24-warning.png';
+        $path = $base_insecure_url . '/' . drupal_get_path('theme', 'bartik') . '/logo.png';
+
       }
     }
     return $path;
@@ -95,7 +98,7 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
       $dirname = drupal_dirname($local_path);
       file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
       $response = drupal_http_request($this->getOriginalThumbnailPath());
-      if (!isset($response->error)) {
+      if (empty($response->error)) {
         file_save_data($response->data, $local_path, FILE_EXISTS_REPLACE);
       }
       else {
