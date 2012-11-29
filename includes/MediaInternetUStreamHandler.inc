@@ -79,7 +79,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     switch ($type) {
       case 'recorded':
         $properties = self::getVideoProperties($id);
-        if ($properties['error']) {
+        if (!empty($properties['error'])) {
           throw new MediaInternetValidationException(
               "The UStream video ID '$id' does not exist, is set to private, or has been deleted.");
         }
@@ -87,9 +87,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
 
       case 'live':
         $properties = self::getChannelProperties($id);
-        if ($properties['error'] || $properties['results']['title'] == NULL) {
-          // $channel_properties['error'] is non-NULL when referring to a channel by a bad name string.
-          // The Title is NULL when referring to a channel by a bad id (this is probably an API bug).
+        if (!empty($properties['error']) || $properties['results']['title'] == NULL) {
           throw new MediaInternetValidationException(
               "The UStream channel ID '$id' does not exist, is set to private, or has been deleted.");
         }
@@ -97,7 +95,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
 
       case 'user':
         $properties = self::getUserProperties($id);
-        if ($properties['error']) {
+        if (!empty($properties['error'])) {
           throw new MediaInternetValidationException(
               "The UStream user ID '$id' does not exist, is set to private, or has been deleted.");
         }
@@ -112,10 +110,9 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
           // Grab the clean oembed.
           $oembed = self::getViaOEmbed(check_plain($id));
           // Unknown user and channel, we will abort.
-          if (!empty($oembed['error'])) {
+          if (!isset($oembed) || !empty($oembed['error'])) {
             throw new MediaInternetValidationException(
               "The UStream user or channel ID '$id' does not exist, is set to private, or has been deleted.");
-            return FALSE;
           }
           // We need the last part of the author_url.
           $path = explode('/user/', $oembed['author_url']);
@@ -149,15 +146,11 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
         break;
 
     }
-
     // If we have a result, return it, else return false.
-    if (!empty($properties)) {
+    if (!empty($properties) && empty($properties['error'])) {
       return $properties;
     }
-    else {
-      // No match = false.
-      return FALSE;
-    }
+    return FALSE;
   }
 
   /**
@@ -243,17 +236,29 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
           $parts = explode('://', $existing_file->uri);
           $file_uri = $parts[1];
         }
-        else {
-          $properties = self::validId(check_plain($matches[1]), $case);
-          $this->title = $properties['results']['title'];
-          $file_uri = $case . '/' . check_plain($properties['results']['id']);
-          if ($case == 'channeloruser') {
-            $file_uri = 'live/' . check_plain($properties['results']['id']);
+        elseif ($properties = self::validId(check_plain($matches[1]), $case)) {
+          if (empty($properties['error'])) {
+            $this->title = $properties['results']['title'];
+            $file_uri = $case . '/' . check_plain($properties['results']['id']);
+            if ($case == 'channeloruser') {
+              $file_uri = 'live/' . check_plain($properties['results']['id']);
+            }
           }
         }
         // If we have a $file_uri, Use it.
-        if (!empty($file_uri)) {
+        if (isset($file_uri)) {
           return file_stream_wrapper_uri_normalize('ustream://' . $file_uri);
+        }
+        else {
+          // If the code ever gets to this point, something is really Wrong.
+          if (module_exists('help')) {
+            $link = l("Media: UStream's README", 'help/media_ustream/README.txt');
+          }
+          else {
+            $link = l("Media: UStream's README", 'sites/all/modules/media_ustream/README.txt');
+          }
+          drupal_set_message("Media: UStream cannot save $match[0], due to limitations in UStream's API. Please refer to $link under the URL FORMATS heading for more information.", 'error', FALSE);
+          return FALSE;
         }
       }
     }
@@ -266,7 +271,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     // Preparse is the same as parse, but it only returns
     // a bool true/false and does not return a file.
     // I've done this to save speed. (and it's a lot).
-    if (empty($this->fileObject->fid) && $this->preparse($embedCode)) {
+    if (empty($this->fileObject->fid) && $this->parse($embedCode)) {
       return TRUE;
     }
   }
@@ -310,9 +315,6 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
     $response = drupal_http_request($oembed_url);
     if (empty($response->error)) {
       return drupal_json_decode($response->data);
-    }
-    else {
-      throw new Exception("Error Processing Request. (Error: {$response->code}, {$response->error})");
     }
   }
 }
