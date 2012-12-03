@@ -74,14 +74,13 @@ class MediaUStreamStreamWrapper extends MediaReadOnlyStreamWrapper {
       }
       else {
         // This channel has no picture of its own, so use our placeholder image.
+        // $base_insecure_url is important because it explicitly uses http:// rather than https://, which $base_url
+        // will use if the site it set up to use https:// for logged in users.
         global $base_insecure_url;
-        // NOTE: $base_insecure_url is important because it explicitly uses http:// rather than https://, which $base_url will use
-        // if the site it set up for https:// for logged in users.
 
-        // TODO: / NOTE: Media module can really use a 'no image available' image.
-        //$path = $base_insecure_url . '/misc/message-24-warning.png';
+        // TODO: / NOTE: It'd be really nice if the Media module had a 'no thumbnail available' image which we could
+        // use instead of this poor-man's placeholder.
         $path = $base_insecure_url . '/' . drupal_get_path('theme', 'bartik') . '/logo.png';
-
       }
     }
     return $path;

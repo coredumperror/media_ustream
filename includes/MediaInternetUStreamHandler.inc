@@ -67,7 +67,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
    * Check if a UStream video/channel id is valid.
    *
    * @param $id - The video or channel ID.
-   * @param $type - A string, either 'live' or 'recorded'.
+   * @param $type - A string, either 'live', 'recorded', 'user', or 'channeloruser'.
    *
    * @return
    *   Boolean.
@@ -157,7 +157,7 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
    * Check if a UStream id is already stored in the DB.
    *
    * @param $id - The video or channel ID.
-   * @param $type - A string, either 'live' or 'recorded'.
+   * @param $type - A string, either 'live', 'recorded', 'user', or 'channeloruser'.
    *
    * @return
    *   Boolean.
@@ -201,12 +201,12 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
       '@ustream\.tv/([a-zA-Z0-9_\-]+)$@i'         => 'channeloruser', // User channel or promoted channel.
     );
 
-    foreach ($recorded_patterns as $pattern => $case) {
+    foreach ($recorded_patterns as $pattern => $type) {
       preg_match($pattern, $embedCode, $matches);
       // If a match was found, check if it's a video that's already saved,
       // locally before calling the API to see if it's a valid video id.
       if (!empty($matches[1])) {
-        if ($fid = self::knownId(check_plain($matches[1]), $case)) {
+        if ($fid = self::knownId(check_plain($matches[1]), $type)) {
           // No need to do anything, we already know this $embedCode.
           // Grab the file id, load the file and return normalized string.
           $existing_file = file_load($fid);
@@ -214,11 +214,11 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
           // We already know the file exists so [1] Will be available.
           $file_uri = $parts[1];
         }
-        elseif ($properties = self::validId(check_plain($matches[1]), $case)) {
+        elseif ($properties = self::validId(check_plain($matches[1]), $type)) {
           if (empty($properties['error'])) {
             $this->title = $properties['results']['title'];
-            $file_uri = $case . '/' . check_plain($properties['results']['id']);
-            if ($case == 'channeloruser') {
+            $file_uri = $type . '/' . check_plain($properties['results']['id']);
+            if ($type == 'channeloruser') {
               $file_uri = 'live/' . check_plain($properties['results']['id']);
             }
           }
@@ -266,6 +266,9 @@ class MediaInternetUStreamHandler extends MediaInternetBaseHandler {
 
   /**
    * Returns information about the media. See http://www.oembed.com/.
+   * This function is only used for the special ustream channels which are formatted like
+   * "www.ustream.tv/[channel]. We need it because UStream's developer API is deficienct, and
+   * can't handle every [channel].
    *
    * @return
    *   If oEmbed information is available, an array containing 'title', 'type',
